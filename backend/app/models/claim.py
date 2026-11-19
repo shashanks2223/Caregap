@@ -26,6 +26,10 @@ class Claim(Base):
     employer_contact = Column(String(100), nullable=True)
     last_working_date = Column(String(20), nullable=True)
     previous_monthly_salary = Column(Float, nullable=True)
+
+    # Claim Type C / Placement Gap Fields (Signed up, no job for 15+ days)
+    signup_date = Column(String(20), nullable=True)
+    days_unassigned = Column(Integer, default=15)
     
     # Financial calculations
     claimed_salary = Column(Float, nullable=False, default=18000.0)

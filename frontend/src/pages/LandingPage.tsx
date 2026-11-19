@@ -72,6 +72,10 @@ export const LandingPage: React.FC = () => {
       a: "Option B protects caregivers against involuntary job displacement—such as when an elderly patient passes away, recovers, or the family relocates. It provides financial cushion while you transition to a new placement."
     },
     {
+      q: "What if I have signed up but have not been provided with a job for 15 days?",
+      a: "CareGap AI includes a 15-Day Placement Gap Guarantee! If you have enrolled and verified your caregiver profile but have not been assigned any caregiving duty for 15 consecutive days, you qualify for 15 days of salary compensation (50% of your monthly declared salary) to protect your livelihood while waiting for placement."
+    },
+    {
       q: "Are the displayed premiums actual insurance quotations?",
       a: "No. This application is an academic insurance technology prototype. All displayed prices (₹199, ₹349, ₹499) and compensation limits are illustrative demonstration values designed for evaluation."
     },
@@ -174,6 +178,22 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed pt-1">
                     Provides transition support when families no longer need care (patient recovery, relocation, or bereavement).
+                  </p>
+                </div>
+
+                {/* 15-Day Placement Guarantee Box */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1.5 hover:border-amber-400 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy-800">15-Day Placement Guarantee</h3>
+                      <p className="text-[10px] text-amber-700 font-semibold">15 Days Salary if Unassigned</p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-snug">
+                    Signed up but not assigned a placement for 15 days? Receive 15 days of salary income protection.
                   </p>
                 </div>
 

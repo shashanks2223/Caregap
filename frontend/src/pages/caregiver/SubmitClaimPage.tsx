@@ -9,7 +9,9 @@ import {
   FileText,
   Calendar,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import api from '../../services/api';
 import { Sidebar } from '../../components/Sidebar';
@@ -18,7 +20,7 @@ import { ChatWidget } from '../../components/ChatWidget';
 
 export const SubmitClaimPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'OPTION_A' | 'OPTION_B'>('OPTION_A');
+  const [activeTab, setActiveTab] = useState<'OPTION_A' | 'OPTION_B' | 'PLACEMENT_GAP'>('OPTION_A');
   const [policies, setPolicies] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,6 +48,16 @@ export const SubmitClaimPage: React.FC = () => {
     claimed_salary: 20000
   });
 
+  // Form State: Option C (15-Day Placement Gap)
+  const [claimPG, setClaimPG] = useState({
+    policy_id: '',
+    signup_date: '2026-10-01',
+    agency_or_platform: 'CareBridge Senior Living & Homecare',
+    days_unassigned: 15,
+    claimed_salary: 20000,
+    notes: 'Signed up and verified with agency, but no patient care placement provided for 15+ consecutive days.'
+  });
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -59,6 +71,7 @@ export const SubmitClaimPage: React.FC = () => {
       if (res.data.length > 0) {
         setClaimA(prev => ({ ...prev, policy_id: res.data[0].id }));
         setClaimB(prev => ({ ...prev, policy_id: res.data[0].id }));
+        setClaimPG(prev => ({ ...prev, policy_id: res.data[0].id }));
       }
     } catch (e) {
       console.log('Error fetching policies:', e);
@@ -144,6 +157,44 @@ export const SubmitClaimPage: React.FC = () => {
     }
   };
 
+  const handleSubmitPG = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMsg(null);
+
+    try {
+      const res = await api.post('/claims/submit-placement-gap', {
+        policy_id: Number(claimPG.policy_id),
+        signup_date: claimPG.signup_date,
+        agency_or_platform: claimPG.agency_or_platform,
+        days_unassigned: Number(claimPG.days_unassigned),
+        claimed_salary: Number(claimPG.claimed_salary),
+        notes: claimPG.notes
+      });
+
+      const claimId = res.data.id;
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('document_type', 'onboarding_confirmation');
+        formData.append('file', selectedFile);
+        await api.post(`/claim-documents/upload/${claimId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      setMsg({
+        text: `Placement Gap Claim ${res.data.claim_number} filed! Verified for 15-day salary benefit (₹${((Number(claimPG.claimed_salary) / 30) * 15).toLocaleString('en-IN')}).`,
+        type: 'success'
+      });
+      setTimeout(() => navigate('/caregiver/claims'), 1500);
+    } catch (err: any) {
+      setMsg({ text: err.response?.data?.detail || 'Failed to submit placement gap claim.', type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F9FC] flex">
       <Sidebar />
@@ -162,7 +213,7 @@ export const SubmitClaimPage: React.FC = () => {
           )}
 
           {/* Type Selector Tabs */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               type="button"
               onClick={() => {
@@ -181,7 +232,7 @@ export const SubmitClaimPage: React.FC = () => {
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700">Option A</span>
                 <h3 className="text-sm font-bold text-navy-800">Medical Incapacity Claim</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Physical illness or accidental injury preventing work</p>
+                <p className="text-xs text-slate-500 mt-0.5">Physical illness or injury preventing work</p>
               </div>
             </button>
 
@@ -202,8 +253,30 @@ export const SubmitClaimPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-navy-700">Option B</span>
-                <h3 className="text-sm font-bold text-navy-800">Involuntary Job Loss Claim</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Family contract ended or patient care concluded</p>
+                <h3 className="text-sm font-bold text-navy-800">Involuntary Job Loss</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Contract ended or patient recovery</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('PLACEMENT_GAP');
+                setSelectedFile(null);
+              }}
+              className={`p-5 rounded-3xl border text-left flex items-start gap-3.5 transition-all ${
+                activeTab === 'PLACEMENT_GAP'
+                  ? 'bg-amber-50/60 border-amber-500 shadow-xs'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <div className={`p-2 rounded-xl ${activeTab === 'PLACEMENT_GAP' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">15-Day Protection</span>
+                <h3 className="text-sm font-bold text-navy-800">Placement Gap Stipend</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Signed up with no job for 15+ days</p>
               </div>
             </button>
           </div>
@@ -312,7 +385,7 @@ export const SubmitClaimPage: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
-            ) : (
+            ) : activeTab === 'OPTION_B' ? (
               <form onSubmit={handleSubmitB} className="space-y-4">
                 <div className="border-b border-slate-100 pb-3">
                   <h3 className="text-sm font-bold text-navy-800">Option B: Involuntary Job Loss Claim Details</h3>
@@ -413,6 +486,143 @@ export const SubmitClaimPage: React.FC = () => {
                   className="w-full py-3 rounded-xl bg-navy-800 hover:bg-navy-900 text-white font-bold text-xs shadow-md shadow-navy-800/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                 >
                   {submitting ? 'Sending for Employer Verification...' : 'Submit Option B Claim'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmitPG} className="space-y-4">
+                <div className="border-b border-slate-100 pb-3 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-navy-800">15-Day Placement Gap Protection Form</h3>
+                    <p className="text-xs text-slate-500">Signed up but not assigned a caregiving placement for 15+ days</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200">
+                    15 Days Salary Guaranteed
+                  </span>
+                </div>
+
+                {/* Calculation Banner */}
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      15-Day Placement Delay Benefit
+                    </p>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      Enrolled caregivers receive 15 days of salary if unassigned for 15+ consecutive days.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Calculated Payout</span>
+                    <p className="text-lg font-black text-amber-900">
+                      ₹{Math.round((Number(claimPG.claimed_salary) / 30) * 15).toLocaleString('en-IN')}
+                    </p>
+                    <span className="text-[10px] text-amber-700 font-medium">15 days wage replacement</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Select Active Policy</label>
+                    <select
+                      value={claimPG.policy_id}
+                      onChange={(e) => setClaimPG({ ...claimPG, policy_id: e.target.value })}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white"
+                    >
+                      {policies.map(p => (
+                        <option key={p.id} value={p.id}>{p.policy_number} - {p.plan?.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Signup / Registration Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={claimPG.signup_date}
+                      onChange={(e) => setClaimPG({ ...claimPG, signup_date: e.target.value })}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Care Agency / Platform Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={claimPG.agency_or_platform}
+                      onChange={(e) => setClaimPG({ ...claimPG, agency_or_platform: e.target.value })}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Days Without Job Assignment</label>
+                    <input
+                      type="number"
+                      required
+                      min={15}
+                      value={claimPG.days_unassigned}
+                      onChange={(e) => setClaimPG({ ...claimPG, days_unassigned: Number(e.target.value) })}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Minimum qualification requirement: 15 consecutive days.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Declared Monthly Salary Base (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={claimPG.claimed_salary}
+                    onChange={(e) => setClaimPG({ ...claimPG, claimed_salary: Number(e.target.value) })}
+                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Placement Notes / Declarations</label>
+                  <textarea
+                    rows={2}
+                    value={claimPG.notes}
+                    onChange={(e) => setClaimPG({ ...claimPG, notes: e.target.value })}
+                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white leading-relaxed"
+                  />
+                </div>
+
+                {/* File Upload Box */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Attach Agency Enrolment / Onboarding Slip / WhatsApp Chat Screenshot (Optional)
+                  </label>
+                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-amber-500 transition-colors bg-slate-50/50">
+                    <input
+                      type="file"
+                      id="filePG"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                      className="hidden"
+                    />
+                    <label htmlFor="filePG" className="cursor-pointer space-y-2 block">
+                      <Upload className="w-8 h-8 text-amber-600 mx-auto" />
+                      <p className="text-xs font-semibold text-navy-800">
+                        {selectedFile ? selectedFile.name : 'Click to upload Enrolment or Agency Documentation'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">PDF, PNG, or JPG up to 10MB</p>
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {submitting ? 'Submitting Placement Gap Claim...' : 'Claim 15-Day Salary Benefit'}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>

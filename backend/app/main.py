@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 import app.models  # Ensures all models are registered with Base.metadata
@@ -30,6 +31,18 @@ from app.routers import (
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Ensure backward-compatible column migrations for existing SQLite / PostgreSQL databases
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE claims ADD COLUMN signup_date VARCHAR(20)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE claims ADD COLUMN days_unassigned INTEGER DEFAULT 15"))
+            conn.commit()
+        except Exception:
+            pass
     db = SessionLocal()
     try:
         seed_database(db)

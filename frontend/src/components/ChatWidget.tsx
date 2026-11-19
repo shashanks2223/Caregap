@@ -8,7 +8,7 @@ export const ChatWidget: React.FC = () => {
     {
       role: 'model',
       text: "Hello! I am **CareGap AI Assistant**. How can I help protect your caregiving income today?",
-      actions: ["Explain Option A", "Explain Option B", "How Claims Work", "Calculate My Premium"]
+      actions: ["Explain Option A", "Explain Option B", "15-Day Placement Gap", "Calculate My Premium"]
     }
   ]);
   const [input, setInput] = useState('');

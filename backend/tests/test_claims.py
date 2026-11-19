@@ -73,3 +73,37 @@ def test_eligibility_engine_option_b_qualifying():
         assert res["calculated_benefit"] > 0
     finally:
         db.close()
+
+def test_placement_gap_insufficient_days():
+    db = SessionLocal()
+    try:
+        pol = db.query(Policy).first()
+        res = EligibilityEngine.evaluate_placement_gap_claim(
+            policy=pol,
+            days_unassigned=10,
+            signup_date_str="2026-10-01",
+            declared_salary=18000.0
+        )
+        assert res["is_eligible"] is False
+        assert any("minimum requirement is 15 consecutive days" in f for f in res["failed_checks"])
+    finally:
+        db.close()
+
+def test_placement_gap_qualifying_15_days_salary():
+    db = SessionLocal()
+    try:
+        pol = db.query(Policy).first()
+        salary = 18000.0
+        res = EligibilityEngine.evaluate_placement_gap_claim(
+            policy=pol,
+            days_unassigned=15,
+            signup_date_str="2026-10-01",
+            declared_salary=salary
+        )
+        assert res["is_eligible"] is True
+        assert res["billable_days"] == 15
+        expected_15_days_salary = round((salary / 30.0) * 15.0, 2)
+        assert res["calculated_benefit"] == expected_15_days_salary
+        assert res["calculated_benefit"] == 9000.0
+    finally:
+        db.close()

@@ -208,7 +208,7 @@ Context:
 {plans_text}
 
 Rules:
-1. Clearly explain Option A (Personal Illness / Injury) and Option B (Involuntary Job Loss / Patient Continuity).
+1. Clearly explain Option A (Personal Illness / Injury), Option B (Involuntary Job Loss / Patient Continuity), and Placement Gap Protection (if a caregiver signed up but has not been provided with a job for 15 days, they receive 15 days of salary).
 2. Never fabricate insurance terms; refer strictly to the platform's illustrative prototype plans (Basic ₹199, Plus ₹349, Premium ₹499).
 3. If asked about claims, explain the step-by-step process: Submit -> Document Verification -> Review -> Decision.
 4. Keep answers concise, helpful, and professional with bullet points where appropriate.
@@ -226,7 +226,16 @@ Rules:
 
         # Deterministic Knowledge Base Fallback
         msg_lower = message.lower()
-        if "option a" in msg_lower or "illness" in msg_lower or "accident" in msg_lower or "injury" in msg_lower:
+        if "15 day" in msg_lower or "placement" in msg_lower or "not provided" in msg_lower or "no job" in msg_lower or "bench" in msg_lower:
+            reply = (
+                "**15-Day Job Placement Gap Protection:**\n\n"
+                "If you have signed up and verified your profile but have **not been provided with a caregiving placement for 15 days**, you are entitled to **15 days of salary compensation** (half a month's wage replacement)!\n\n"
+                "• **Eligibility**: Enrolled caregiver with no assigned job for 15+ consecutive days post-registration.\n"
+                "• **Compensation**: `(Monthly Salary / 30) × 15 days` (e.g. ₹18,000 salary = ₹9,000 benefit).\n"
+                "• **How to claim**: Open 'Submit Claim' and choose the '15-Day Placement Gap' claim form."
+            )
+            actions = ["Submit Placement Gap Claim", "Explore Plus Plan (A+B)"]
+        elif "option a" in msg_lower or "illness" in msg_lower or "accident" in msg_lower or "injury" in msg_lower:
             reply = (
                 "**Option A: Personal Income Protection** safeguards you against temporary income loss when you are "
                 "medically unable to work due to covered illness or accidental injury.\n\n"

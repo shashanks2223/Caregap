@@ -54,6 +54,13 @@ export const ClaimTrackingPage: React.FC = () => {
     { key: 'APPROVED', label: 'Benefit Approved' }
   ];
 
+  const stepsPG = [
+    { key: 'SUBMITTED', label: 'Claim Filed' },
+    { key: 'DOCUMENT_VERIFICATION', label: 'Onboarding Check' },
+    { key: 'UNDER_REVIEW', label: '15-Day Verification' },
+    { key: 'APPROVED', label: '15-Day Salary Disbursed' }
+  ];
+
   const getStepIndex = (status: string, isOptionB: boolean) => {
     const list = isOptionB ? ['SUBMITTED', 'EMPLOYMENT_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'COMPLETED'] : ['SUBMITTED', 'DOCUMENT_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'COMPLETED'];
     const idx = list.indexOf(status);
@@ -95,7 +102,7 @@ export const ClaimTrackingPage: React.FC = () => {
                         <StatusBadge status={c.status} />
                       </div>
                       <p className="text-[11px] text-slate-600 line-clamp-1">
-                        {c.claim_type === 'OPTION_A' ? c.incident_description : c.termination_reason}
+                        {c.claim_type === 'OPTION_A' ? c.incident_description : (c.claim_type === 'PLACEMENT_GAP' ? `Placement Gap (${c.days_unassigned || 15} days unassigned)` : c.termination_reason)}
                       </p>
                       <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
                         <span>{c.claim_type}</span>
@@ -136,7 +143,7 @@ export const ClaimTrackingPage: React.FC = () => {
                     <div className="relative flex justify-between items-center">
                       <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
                       
-                      {(selectedClaim.claim_type === 'OPTION_B' ? stepsB : stepsA).map((step, idx) => {
+                      {(selectedClaim.claim_type === 'OPTION_B' ? stepsB : (selectedClaim.claim_type === 'PLACEMENT_GAP' ? stepsPG : stepsA)).map((step, idx) => {
                         const currentIdx = getStepIndex(selectedClaim.status, selectedClaim.claim_type === 'OPTION_B');
                         const isDone = idx <= currentIdx;
                         const isCurrent = idx === currentIdx;

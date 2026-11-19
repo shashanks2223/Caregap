@@ -9,7 +9,7 @@ from app.models.claim import Claim, ClaimDocument, ClaimReview
 from app.models.insurance import Policy
 from app.models.profile import CaregiverProfile, EmployerProfile
 from app.models.user import User
-from app.schemas.claim import ClaimCreateA, ClaimCreateB, ClaimResponse, ClaimStatusUpdate
+from app.schemas.claim import ClaimCreateA, ClaimCreateB, ClaimCreatePlacementGap, ClaimResponse, ClaimStatusUpdate
 from app.services.claim_service import ClaimService
 from app.services.eligibility_engine import EligibilityEngine
 from app.services.notification_service import NotificationService
@@ -123,6 +123,35 @@ def submit_option_b_claim(
     )
     return claim
 
+@router.post("/submit-placement-gap", response_model=ClaimResponse)
+def submit_placement_gap_claim(
+    data: ClaimCreatePlacementGap,
+    profile: CaregiverProfile = Depends(get_current_caregiver),
+    db: Session = Depends(get_db)
+):
+    policy = db.query(Policy).filter(
+        Policy.id == data.policy_id,
+        Policy.caregiver_id == profile.id
+    ).first()
+
+    if not policy or policy.status != "active":
+        raise HTTPException(status_code=400, detail="An active policy is required to file a claim.")
+
+    if policy.coverage_type not in ["OPTION_B", "COMBINED", "COMBINED_PREMIUM"]:
+        raise HTTPException(status_code=400, detail="Your current policy does not include Employment Continuity / Placement Gap protection.")
+
+    claim = ClaimService.create_claim_placement_gap(
+        db=db,
+        caregiver_profile=profile,
+        policy=policy,
+        signup_date=data.signup_date,
+        agency_or_platform=data.agency_or_platform,
+        days_unassigned=data.days_unassigned,
+        claimed_salary=data.claimed_salary,
+        notes=data.notes
+    )
+    return claim
+
 @router.post("/evaluate-eligibility/{claim_id}")
 def evaluate_claim_eligibility(
     claim_id: int,
@@ -138,6 +167,13 @@ def evaluate_claim_eligibility(
             policy=claim.policy,
             interruption_days=claim.benefit_duration_days,
             incident_date_str=claim.incident_date or claim.interruption_start_date or "2026-10-01"
+        )
+    elif claim.claim_type == "PLACEMENT_GAP":
+        result = EligibilityEngine.evaluate_placement_gap_claim(
+            policy=claim.policy,
+            days_unassigned=claim.days_unassigned or 15,
+            signup_date_str=claim.signup_date or "2026-10-01",
+            declared_salary=claim.claimed_salary
         )
     else:
         result = EligibilityEngine.evaluate_option_b_claim(

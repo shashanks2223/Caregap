@@ -104,7 +104,8 @@ def seed_database(db: Session):
         eligibility_conditions=[
             "Continuous 3 months caregiving work history",
             "Involuntary termination confirmation by employer/household",
-            "Documented medical inability or employer cessation"
+            "Documented medical inability or employer cessation",
+            "15-Day Placement Gap Guarantee: 15 days salary if unplaced for 15+ days post-registration"
         ],
         is_active=True
     )
@@ -407,7 +408,8 @@ def seed_database(db: Session):
         (7, 7, "OPTION_B", "APPROVED", 30, None, "Care agency downsizing territorial coverage in North Delhi.", False),
         (8, 8, "OPTION_B", "REJECTED", 30, None, "Voluntary resignation without qualifying cause.", False),
         (9, 9, "OPTION_A", "UNDER_REVIEW", 45, "Severe knee ligament tear requiring immobilization.", None, True), # Fraud flag demonstration
-        (10, 10, "OPTION_B", "COMPLETED", 30, None, "Patient deceased; service contract involuntarily closed.", False)
+        (10, 10, "OPTION_B", "COMPLETED", 30, None, "Patient deceased; service contract involuntarily closed.", False),
+        (11, 11, "PLACEMENT_GAP", "UNDER_REVIEW", 15, "Caregiver registered and verified with agency but not assigned any care placement for 15+ days.", None, False)
     ]
 
     for c_idx, (cg_i, pol_i, c_type, c_status, dur, desc, t_reason, is_fraud) in enumerate(claim_scenarios):
@@ -429,6 +431,8 @@ def seed_database(db: Session):
             expected_recovery_date="2026-10-27" if c_type == "OPTION_A" else None,
             termination_date="2026-09-30" if c_type == "OPTION_B" else None,
             termination_reason=t_reason,
+            signup_date="2026-09-15" if c_type == "PLACEMENT_GAP" else None,
+            days_unassigned=15 if c_type == "PLACEMENT_GAP" else 0,
             employer_id=employer_profiles[cg_i % len(employer_profiles)].id,
             employer_name=employer_profiles[cg_i % len(employer_profiles)].organization_name,
             last_working_date="2026-09-30" if c_type == "OPTION_B" else "2026-10-05",

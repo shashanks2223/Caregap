@@ -146,3 +146,59 @@ class ClaimService:
 
         return new_claim
 
+    @staticmethod
+    def create_claim_placement_gap(
+        db: Session,
+        caregiver_profile: CaregiverProfile,
+        policy: Policy,
+        signup_date: str,
+        agency_or_platform: Optional[str],
+        days_unassigned: int,
+        claimed_salary: float,
+        notes: Optional[str] = None
+    ) -> Claim:
+        claim_num = ClaimService.generate_claim_number(db)
+        
+        # 15 days salary = (claimed_salary / 30.0) * 15
+        daily_rate = claimed_salary / 30.0
+        calculated_benefit = round(daily_rate * 15.0, 2)
+
+        new_claim = Claim(
+            claim_number=claim_num,
+            policy_id=policy.id,
+            caregiver_id=caregiver_profile.id,
+            claim_type="PLACEMENT_GAP",
+            signup_date=signup_date,
+            days_unassigned=max(15, days_unassigned),
+            employer_name=agency_or_platform or caregiver_profile.employer_name or "CareGap Network Agency",
+            incident_description=notes or f"Enrolled caregiver remained without job placement for {days_unassigned} days post-signup.",
+            claimed_salary=claimed_salary,
+            calculated_benefit_amount=calculated_benefit,
+            benefit_duration_days=15,
+            status="DOCUMENT_VERIFICATION"
+        )
+        db.add(new_claim)
+        db.commit()
+        db.refresh(new_claim)
+
+        # Notify Caregiver
+        NotificationService.send_notification(
+            db=db,
+            user_id=caregiver_profile.user_id,
+            title="15-Day Placement Gap Claim Filed",
+            message=f"Your Placement Gap Claim {claim_num} for 15 days salary benefit (₹{calculated_benefit:,.2f}) has been logged and is under verification.",
+            notification_type="claim",
+            metadata={"claim_id": new_claim.id, "claim_number": claim_num}
+        )
+
+        log_audit(
+            db=db,
+            action="SUBMIT_CLAIM_PLACEMENT_GAP",
+            entity_type="claim",
+            entity_id=str(new_claim.id),
+            user_id=caregiver_profile.user_id,
+            details={"claim_number": claim_num, "amount": calculated_benefit, "days_unassigned": days_unassigned}
+        )
+
+        return new_claim
+

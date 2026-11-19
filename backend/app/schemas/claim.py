@@ -20,6 +20,14 @@ class ClaimCreateB(BaseModel):
     previous_monthly_salary: float
     claimed_salary: float
 
+class ClaimCreatePlacementGap(BaseModel):
+    policy_id: int
+    signup_date: str
+    agency_or_platform: Optional[str] = "CareGap Network Agency"
+    days_unassigned: int = 15
+    claimed_salary: float
+    notes: Optional[str] = "Signed up but not provided with caregiving employment for 15+ days."
+
 class ClaimDocumentResponse(BaseModel):
     id: int
     claim_id: int
@@ -66,6 +74,8 @@ class ClaimResponse(BaseModel):
     employer_contact: Optional[str] = None
     last_working_date: Optional[str] = None
     previous_monthly_salary: Optional[float] = None
+    signup_date: Optional[str] = None
+    days_unassigned: Optional[int] = None
     claimed_salary: float
     calculated_benefit_amount: float
     approved_benefit_amount: Optional[float] = None

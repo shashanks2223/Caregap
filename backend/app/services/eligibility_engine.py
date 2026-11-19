@@ -134,3 +134,49 @@ class EligibilityEngine:
             "warnings": warnings,
             "evaluation_notes": "Qualifies for temporary income continuity support during transition." if is_eligible else "Involuntary employment loss criteria not met."
         }
+
+    @staticmethod
+    def evaluate_placement_gap_claim(
+        policy: Policy,
+        days_unassigned: int,
+        signup_date_str: str,
+        declared_salary: float
+    ) -> Dict[str, Any]:
+        """
+        Evaluate eligibility for Placement Gap Protection (Signed up but not provided with a job for 15+ days).
+        Caregivers without placement for 15 consecutive days receive 15 days of salary:
+        15 days benefit = (Monthly Salary / 30) * 15 = Monthly Salary / 2.
+        """
+        reasons_pass: List[str] = []
+        reasons_fail: List[str] = []
+        warnings: List[str] = []
+
+        # 1. Active policy check
+        if policy.status != "active":
+            reasons_fail.append(f"Policy is not active (Status: {policy.status}).")
+        else:
+            reasons_pass.append("Policy is in active good standing.")
+
+        # 2. 15-Day Unassigned Bench Threshold Check
+        if days_unassigned < 15:
+            reasons_fail.append(f"Caregiver has been without placement for {days_unassigned} days; minimum requirement is 15 consecutive days.")
+        else:
+            reasons_pass.append(f"Verified {days_unassigned} days without job assignment (meets 15-day requirement).")
+
+        # 3. 15-Day Salary Benefit Calculation
+        daily_rate = round(declared_salary / 30.0, 2)
+        total_benefit = round(daily_rate * 15.0, 2)
+
+        is_eligible = len(reasons_fail) == 0
+
+        return {
+            "is_eligible": is_eligible,
+            "claim_type": "PLACEMENT_GAP",
+            "billable_days": 15,
+            "daily_benefit_rate": daily_rate,
+            "calculated_benefit": total_benefit if is_eligible else 0.0,
+            "passed_checks": reasons_pass,
+            "failed_checks": reasons_fail,
+            "warnings": warnings,
+            "evaluation_notes": "Eligible for 15 days salary compensation under Placement Gap Protection." if is_eligible else "Does not qualify for 15-day placement bench stipend."
+        }

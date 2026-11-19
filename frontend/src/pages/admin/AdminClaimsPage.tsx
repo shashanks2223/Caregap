@@ -166,6 +166,7 @@ export const AdminClaimsPage: React.FC = () => {
                 <option value="ALL">All Types</option>
                 <option value="OPTION_A">Option A (Medical)</option>
                 <option value="OPTION_B">Option B (Job Loss)</option>
+                <option value="PLACEMENT_GAP">15-Day Placement Gap</option>
               </select>
             </div>
           </div>
@@ -208,10 +209,15 @@ export const AdminClaimsPage: React.FC = () => {
                           {c.caregiver?.full_name || 'Caregiver'}
                         </td>
                         <td className="p-3.5">
-                          <span className="font-semibold text-slate-700">{c.claim_type}</span>
+                          <span className={`font-semibold px-2 py-0.5 rounded text-[10px] ${
+                            c.claim_type === 'OPTION_A' ? 'bg-teal-50 text-teal-700' :
+                            c.claim_type === 'PLACEMENT_GAP' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
+                          }`}>
+                            {c.claim_type === 'PLACEMENT_GAP' ? '15-DAY GAP' : c.claim_type}
+                          </span>
                         </td>
                         <td className="p-3.5 text-slate-600 max-w-xs truncate">
-                          {c.claim_type === 'OPTION_A' ? c.incident_description : c.termination_reason}
+                          {c.claim_type === 'OPTION_A' ? c.incident_description : (c.claim_type === 'PLACEMENT_GAP' ? `Unassigned ${c.days_unassigned || 15} days: ${c.incident_description || 'Waiting for job assignment'}` : c.termination_reason)}
                         </td>
                         <td className="p-3.5 text-slate-600">{c.benefit_duration_days} Days</td>
                         <td className="p-3.5 font-bold text-navy-800">

@@ -128,6 +128,17 @@ $$\text{Option A Payout} = \text{Daily Benefit Rate} \times \text{Billable Days}
 $$\text{Option B Payout} = \text{Declared Monthly Salary} \times \text{Plan Multiplier (1.0)}$$
 - Extendable to 60 days on configured multi-month Premium plans.
 
+### 15-Day Job Placement Gap Payout Formula
+- Provides **15 days of salary income protection** when a registered caregiver is not provided with an active placement for 15+ consecutive days:
+$$\text{Daily Benefit Rate} = \frac{\text{Declared Monthly Salary}}{30}$$
+$$\text{15-Day Placement Payout} = \text{Daily Benefit Rate} \times 15 = \frac{\text{Declared Monthly Salary}}{2}$$
+
+*Example:*
+- Declared Monthly Salary: ₹20,000 / month
+- Daily Rate: ₹666.67 / day
+- Days Unassigned: 15+ days
+- Total 15-Day Salary Payout: $15 \times 666.67 = \text{₹}10,000$ (50% of monthly income)
+
 ---
 
 ## 5. AI Safety & Human-in-the-Loop Governance
