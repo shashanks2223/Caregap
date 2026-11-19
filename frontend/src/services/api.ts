@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Support production VITE_API_URL if configured, otherwise default to local /api proxy
+const rawApiUrl = import.meta.env.VITE_API_URL || '';
+const baseApiUrl = rawApiUrl ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`) : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: baseApiUrl,
   headers: {
     'Content-Type': 'application/json',
   },
